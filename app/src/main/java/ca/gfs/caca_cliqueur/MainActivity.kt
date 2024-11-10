@@ -35,8 +35,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialiser le MediaPlayer avec la musique de fond
-        mediaPlayer = MediaPlayer.create(this, R.raw.background_music)
+        // Initialize MediaPlayer with background music
+        mediaPlayer = MediaPlayer.create(this, R.raw.musique_dascenseur)
         mediaPlayer.isLooping = true
         mediaPlayer.start()
 
@@ -114,20 +114,21 @@ fun GameScreen(modifier: Modifier = Modifier, context: Context, onMuteToggle: ()
         }
     }
 
-    fun updateLeaderboard(newScore: Int) {
-        // Retrieve and update the current leaderboard
+    fun updateLeaderboard(currentScore: Int) {
         val scores = getLeaderboard(prefs).toMutableList()
-        scores.add(newScore)
-        scores.sortDescending()
 
-        // Keep only the top 10 scores
+        // Remove the current game score if already in the leaderboard
+        scores.remove(currentScore)
+
+        // Add the current game score and keep the list sorted with only the top 10
+        scores.add(currentScore)
+        scores.sortDescending()
         val topScores = if (scores.size > 10) scores.take(10) else scores
 
-        // Save the updated leaderboard in SharedPreferences
+        // Save the updated leaderboard in SharedPreferences and update the displayed leaderboard
         prefs.edit().putStringSet("leaderboard", topScores.map { it.toString() }.toSet()).apply()
-        leaderboard = topScores // Update the leaderboard state for real-time display
+        leaderboard = topScores
     }
-
 
     LaunchedEffect(clicsParSeconde) {
         while (true) {
@@ -136,7 +137,7 @@ fun GameScreen(modifier: Modifier = Modifier, context: Context, onMuteToggle: ()
                 clickCount += clicsParSeconde
                 verifierQuetes(clickCount, quetes)
                 saveProgress()
-                updateLeaderboard(clickCount)
+                updateLeaderboard(clickCount)  // Update leaderboard in real-time
             }
         }
     }
@@ -149,7 +150,7 @@ fun GameScreen(modifier: Modifier = Modifier, context: Context, onMuteToggle: ()
     }
 
     fun restartGame() {
-        updateLeaderboard(clickCount)
+        updateLeaderboard(clickCount)  // Final update before resetting score
         clickCount = 0
         multiplicateur = 1
         clicsParSeconde = 0
@@ -161,8 +162,13 @@ fun GameScreen(modifier: Modifier = Modifier, context: Context, onMuteToggle: ()
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier.fillMaxSize()) {
         Text(text = "Score: $clickCount", fontSize = 24.sp)
 
-        if (afficherScoreParClic) {
-            Text(text = "+$scoreParClic", fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Reserved space for score increment display
+        Box(modifier = Modifier.height(20.dp)) {
+            if (afficherScoreParClic) {
+                Text(text = "+$scoreParClic", fontSize = 20.sp, color = Color.Green)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -178,7 +184,7 @@ fun GameScreen(modifier: Modifier = Modifier, context: Context, onMuteToggle: ()
                     verifierQuetes(clickCount, quetes)
                     afficherScoreParClic = true
                     saveProgress()
-                    updateLeaderboard(clickCount) // Mise à jour en temps réel du classement
+                    updateLeaderboard(clickCount) // Update leaderboard in real-time for each click
                 }
         )
 
